@@ -5,6 +5,7 @@ import PIL
 import matplotlib.pyplot as plt
 import numpy as np
 import time
+import os
 
 def show_img(label, index):
     img_ary = np.array(list(train_set.loc[train_set['label'] == label, 'image'])[index])
@@ -20,8 +21,8 @@ def show_img(label, index):
 
 
 
-
-file_path = "E:/Daniel/Machine Learning/Facial Emotion Rec/train.csv"
+dir_path = os.path.dirname(__file__)
+file_path = os.path.join(dir_path, "./train.csv")
 train_set = pd.read_csv(file_path)
 train_set = train_set[['image','label']]
 
