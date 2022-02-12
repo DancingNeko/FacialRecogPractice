@@ -10,9 +10,10 @@ import numpy as np
 import time
 import os
 from keras.models import Sequential
-from keras.layers import Activation, MaxPooling2D, Dropout, Flatten, Reshape, Dense, Conv2D, GlobalAveragePooling2D
+from keras.layers import Activation, MaxPooling2D, Dropout, Flatten, Reshape, Dense, Conv2D, GlobalAveragePooling2D, Flatten
 import keras.optimizers as optimizers
 from sklearn.model_selection import train_test_split
+from keras.callbacks import ModelCheckpoint
 
 def plot_acc(history, ax = None, xlabel = 'Epoch #'):
   # i'm sorry for this function's code. i am so sorry. 
@@ -61,16 +62,25 @@ def scalar_set_to_2dArray(set):
     for row in set.itertuples():
         scalar = row.image
         scalar = scalar.split(" ")
-        result.append(np.reshape(scalar, (48,48)))
+        convert = []
+        for num in scalar:
+            convert.append(float(num))
+        result.append(np.reshape(convert, (48,48,1)))
+    return np.asarray(result)
+
+def label_to_onehot(label):
+    result = [0,0,0,0,0,0,0]
+    result[label] = 1
     return np.asarray(result)
 
 def set_to_1darray(set):
     result = []
     for row in set.itertuples():
         num = row.label
-        result.append(num)
+        result.append(label_to_onehot(num))
     return np.asarray(result)
 
+monitor = ModelCheckpoint('./model.h5', monitor='val_loss', verbose=0, save_best_only=True, save_weights_only=False, mode='auto', save_freq='epoch')
 
 
 dir_path = os.path.dirname(__file__)
@@ -85,16 +95,21 @@ x_test = scalar_set_to_2dArray(test[['image']])
 y_test = set_to_1darray(test[['label']])
 
 model = Sequential()
-model.add(Conv2D(16, 3, padding='same', activation='relu'))
+model.add(Conv2D(64, (3, 3)))
+model.add(Conv2D(64, (3, 3)))
 model.add(MaxPooling2D())
-model.add(Conv2D(32, 3, padding='same', activation='relu'))
+model.add(Conv2D(128, (3, 3)))
+model.add(Conv2D(128, (3, 3)))
 model.add(MaxPooling2D())
-model.add(Conv2D(64, 3, padding='same', activation='relu'))
+model.add(Conv2D(256, (3, 3)))
+model.add(Conv2D(256, (3, 3)))
 model.add(MaxPooling2D())
+model.add(Flatten()) 
 model.add(Dense(units = 128, activation = 'relu'))
+model.add(Dense(units = 7, activation = 'softmax'))
 model.compile(loss='categorical_crossentropy',
               optimizer='adam',
               metrics=['accuracy'])
 
-history = model.fit(x_train, y_train, epochs=20, validation_data=(x_test, y_test), shuffle=True)
+history = model.fit(x_train, y_train, epochs=20, validation_data=(x_test, y_test), shuffle=True, callbacks=[monitor])
 plot_acc(history)
